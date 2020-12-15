@@ -1,0 +1,27 @@
+# sensor_monitor.yaml
+# 202012151116    
+
+# debugging to file level
+# Value:
+# CRITICAL (and above)
+# ERROR    (and above)
+# WARNING  (and above)
+# INFO     (and above)
+# DEBUG    (and above)
+# NOTSET   (and above)
+debug_level: "INFO"
+# pushover token
+pushover_token: ""
+# pushover user key
+pushover_user: ""
+# pushover alert sound
+pushover_sound: "tugboat"
+# mqtt server IP address string
+mqtt: "192.168.2.242"
+# base topic to monitor
+mqtt_topic: "homeassistant/sensor/ble-temp"
+# put empty string for no remote logging
+rsyslog: "192.168.2.5"
+# period in minutes between checking for updated message
+check_interval: 1
+
