@@ -1,0 +1,8 @@
+# requirements.txt for sensor_monitor.py
+# 202012151337 
+paho-mqtt
+PyYAML
+python-dateutil
+timeloop
+paramiko
+
