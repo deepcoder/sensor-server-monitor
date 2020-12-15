@@ -5,6 +5,8 @@ The BLE c program to receive the BLE advertising packets from the temperature se
 
 Note, the program runs outside the Docker container on the host machine.
 
+The program has a configuration file of same name with .yaml extension
+
 # docker build and run
 
 ```
