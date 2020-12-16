@@ -3,14 +3,14 @@
 #####! /usr/bin/env python3
 #
 # sensor_monitor.py
-# 202012151112              
+# 202012161204
 #
 # check to see if sensors are publishing to MQTT on a periodic basic, if not then alert
 
 #
 PROGRAM_NAME = "sensor_monitor"
 VERSION_MAJOR = "1"
-VERSION_MINOR = "2"
+VERSION_MINOR = "4"
 WORKING_DIRECTORY = "/home/user/sensor_monitor/"
 
 # 
@@ -101,6 +101,8 @@ handler_file.setLevel(logging_level_file)
 PUSHOVER_TOKEN = PROGRAM_CONFIG.get("pushover_token", "")
 PUSHOVER_USER = PROGRAM_CONFIG.get("pushover_user", "")
 PUSHOVER_ALERT = PROGRAM_CONFIG.get("pushover_sound", "")
+# number of errors that can occur between sending alert, this is no used now as we reboot on every event
+PUSHOVER_INTERVAL = 4
 
 # read MQTT server info from YAML config file
 # simple key value pair in YAML file : mqtt: "<mqtt server info>"
@@ -222,13 +224,13 @@ def periodic_update_units():
             ssh.connect(REBOOT_SERVER, username=REBOOT_USER, password=REBOOT_PASSWORD, look_for_keys=False, allow_agent=False)
             ssh_stdin, ssh_stdout, ssh_stderr = ssh.exec_command(REBOOT_COMMAND)
             my_logger.error("server reboot command sent : " + REBOOT_SERVER + " " + str(ssh_stdout) + " " + str(ssh_stderr))
-            alert_number = 1
+            alert_number = 0
             pat_rebooted = True
         else :
             # increment alert counter and reset if alert period has been run through
             pat_rebooted = False
             alert_number = alert_number + 1
-            if (alert_number > 4) :
+            if (alert_number > PUSHOVER_INTERVAL) :
                 alert_number = 0
 
     else :
@@ -277,10 +279,6 @@ def main():
 
     except KeyboardInterrupt :
         tl.stop()
-        message = {"timestamp": "{:d}".format(int(datetime.now().timestamp()))}
-        message["program_version"] = PROGRAM_NAME + " Version : " + VERSION_MAJOR + "." + VERSION_MINOR
-        message["status"] = "STOP"
-        mqttc.publish(MQTT_TOPIC_BASE + "$SYS/STATUS", json.dumps(message))
         mqttc.disconnect()
         mqttc.loop_stop()
         my_logger.info("Keyboard interrupt.")
