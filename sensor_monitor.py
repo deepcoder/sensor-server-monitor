@@ -3,14 +3,14 @@
 #####! /usr/bin/env python3
 #
 # sensor_monitor.py
-# 202012161204
+# 202101071252
 #
 # check to see if sensors are publishing to MQTT on a periodic basic, if not then alert
 
 #
 PROGRAM_NAME = "sensor_monitor"
 VERSION_MAJOR = "1"
-VERSION_MINOR = "4"
+VERSION_MINOR = "6"
 WORKING_DIRECTORY = "/home/user/sensor_monitor/"
 
 # 
@@ -129,11 +129,11 @@ if (RSYSLOG_SERVER != "") :
 
 logging_level_file = logging.getLevelName('DEBUG')
 root_logger.setLevel(logging_level_file)
-# how often to check the winix cloud for updated from each unit, be careful to not be to quick at updates
+# how often to check for updates from each server
 # this is in minutes
 CHECK_PERIOD_MINUTES = PROGRAM_CONFIG.get("check_interval", 5)
 
-REBOOT_SERVER = "192.168.88.10"
+REBOOT_SERVER = "192.168.2.19"
 REBOOT_USER = "pi"
 REBOOT_PASSWORD = "raspberry"
 REBOOT_COMMAND = "sudo reboot"
@@ -161,6 +161,28 @@ alert_number = 0
 # flag to check if we rebooted server with sensors
 pat_rebooted = False
 
+
+# handle getting disconnected from MQTT server
+def on_disconnect(mqttc, userdata, rc) :
+
+    tl.stop()
+
+    my_logger.error("Disconnected from MQTT server : " + str(rc))
+
+    conn = http.client.HTTPSConnection("api.pushover.net:443")
+    conn.request("POST", "/1/messages.json",
+      urllib.parse.urlencode({
+        "token": PUSHOVER_TOKEN,
+        "user": PUSHOVER_USER,
+        "sound": PUSHOVER_ALERT,
+        "priority": "1",
+        "message": PROGRAM_NAME + " : Disconnected from MQTT server : "  + str(rc),
+      }), { "Content-type": "application/x-www-form-urlencoded" })
+    pushover_result = conn.getresponse()
+    my_logger.error("notification sent to pushover : " + str(pushover_result.read().decode()))
+
+    sys.exit(1)
+
 # functions to handle the command messages from MQTT sources
 
 def message_received(mosq, obj, msg) :
@@ -172,7 +194,7 @@ def message_received(mosq, obj, msg) :
     
     msg_text = msg.payload.decode("utf-8")
 
-    my_logger.debug("in messages_received, message topic, qos, text: " + msg.topic + " " + str(msg.qos) + " " + msg_text)
+    my_logger.debug("in messages_received, message topic, qos, text : " + msg.topic + " " + str(msg.qos) + " " + msg_text)
 
     if ( DEBUG_LEVEL == "DEBUG" ) :
         print(".", end="")
@@ -200,7 +222,7 @@ def periodic_update_units():
     if (pat_the_watchdog == False) :
         if ( DEBUG_LEVEL == "DEBUG" ) :
             print("!", end="")
-        my_logger.error("no update for any bluetooth sensors in check period (minutes) : " + str(CHECK_PERIOD_MINUTES))
+        my_logger.error("no update for topic : " + MQTT_TOPIC_BASE + " in check period (minutes) : " + str(CHECK_PERIOD_MINUTES))
 
         # don't send alert every time
         if (alert_number == 0) :
@@ -212,7 +234,7 @@ def periodic_update_units():
                 "user": PUSHOVER_USER,
                 "sound": PUSHOVER_ALERT,
                 "priority": "1",
-                "message": "rebooting server, no update for any bluetooth sensors in check period : " + str(CHECK_PERIOD_MINUTES),
+                "message": PROGRAM_NAME + " : rebooting server, no update for topic : " + MQTT_TOPIC_BASE + " in check period : " + str(CHECK_PERIOD_MINUTES),
               }), { "Content-type": "application/x-www-form-urlencoded" })
             pushover_result = conn.getresponse()
             my_logger.error("notification sent to pushover : " + str(pushover_result.read().decode()))
