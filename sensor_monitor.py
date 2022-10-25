@@ -3,14 +3,14 @@
 #####! /usr/bin/env python3
 #
 # sensor_monitor.py
-# 202101071252
+# 202210251356
 #
 # check to see if sensors are publishing to MQTT on a periodic basic, if not then alert
 
 #
 PROGRAM_NAME = "sensor_monitor"
 VERSION_MAJOR = "1"
-VERSION_MINOR = "6"
+VERSION_MINOR = "7"
 WORKING_DIRECTORY = "/home/user/sensor_monitor/"
 
 # 
@@ -50,7 +50,7 @@ import paramiko
 # Logging setup
 
 # select logging level
-logging_level_file = logging.getLevelName("DEBUG")
+logging_level_file = logging.getLevelName("INFO")
 #level_file = logging.getLevelName('DEBUG')
 logging_level_rsyslog = logging.getLevelName("INFO")
 
@@ -133,7 +133,7 @@ root_logger.setLevel(logging_level_file)
 # this is in minutes
 CHECK_PERIOD_MINUTES = PROGRAM_CONFIG.get("check_interval", 5)
 
-REBOOT_SERVER = "192.168.2.19"
+REBOOT_SERVER = "192.168.2.14"
 REBOOT_USER = "pi"
 REBOOT_PASSWORD = "raspberry"
 REBOOT_COMMAND = "sudo reboot"
